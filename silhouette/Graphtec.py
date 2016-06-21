@@ -327,6 +327,24 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
     if o != len(string):
       raise ValueError('write all %d bytes failed: o=%d' % (len(string), o))
 
+  def safe_write(s, string):
+    """wrapper for write with special emphasis on not to over-load the cutter with long commands."""
+    if s.dev is None: return None
+    # Silhouette Studio uses packet size of maximal 3k, 1k is default
+    safemaxchunksz = 1024
+    so = 0
+    delimiter = "\x03"
+    while so < len(string):
+      safechunksz = min(safemaxchunksz, len(string)-so)
+      candidate = string[so:so+safechunksz]
+      # strip string candidate of unfinished command at its end
+      safechunk = candidate[0:(candidate.rfind(delimiter) + 1)]
+      s.write(string = safechunk)
+      # wait for cutter to finish current chunk, otherwise blocking might occur
+      while not s.status() == "ready":
+        time.sleep(0.05)
+      so += len(safechunk)
+      
   def read(s, size=64, timeout=5000):
     """Low level read method"""
     if s.dev is None: return None
@@ -687,7 +705,7 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
 
   def plot(s, mediawidth=210.0, mediaheight=297.0, margintop=None,
            marginleft=None, pathlist=None, offset=None, bboxonly=False,
-           end_paper_offset=0, regmark=False, regsearch=False,
+           end_paper_offset=0, endposition='below', regmark=False, regsearch=False,
            regwidth=180, reglength=230, regoriginx=15.0, regoriginy=20.0):
     """plot sends the pathlist to the device (real or dummy) and computes the
        bounding box of the pathlist, which is returned.
@@ -703,10 +721,13 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
        bboxonly:  True for drawing the bounding instead of the actual cut design;
                   None for not moving at all (just return the bounding box).
                   Default: False for normal cutting or drawing.
-       end_paper_offset: [mm] adds to the final move, if return_home was False in setup.
+       end_paper_offset: [mm] adds to the final move, if endposition is 'below'.
                 If the end_paper_offset is negative, the end position is within the drawing
                 (reverse movmeents are clipped at the home position)
                 It reverse over the last home position.
+       endpostiton: Default 'below': The media is moved to a position below the actual cut (so another
+                can be started without additional steps, also good for using the cross-cutter).
+                'start': The media is returned to the positon where the cut started.
        Example: The letter Y (20mm tall, 9mm wide) can be generated with
                 pathlist=[[(0,0),(4.5,10),(4.5,20)],[(9,0),(4.5,10)]]
     """
@@ -817,8 +838,8 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
       p += "\x03D%d,%d" % (int(0.5+bbox['lly']), int(0.5+bbox['llx']))
       p += "\x03D%d,%d" % (int(0.5+bbox['ury']), int(0.5+bbox['llx']))
     p += "\x03"   # Properly terminate string of plot commands.
-
-    trailer = []
+    # potentially long command string needs extra care
+    s.safe_write(p)
     
     # Silhouette Cameo2 does not start new job if not properly parked on left side
     # Attention: This needs the media to not extend beyond the left stop
@@ -826,16 +847,17 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
     if not 'lly' in bbox: bbox['lly'] = 0
     if not 'urx' in bbox: bbox['urx'] = 0
     if not 'ury' in bbox: bbox['ury'] = 0
-    new_home = "M%d,%d\x03SO0\x03" % (int(0.5+bbox['lly']+end_paper_offset*20.), 0)
-
-    
-    s.write(p)
+    if endposition == 'start':
+      new_home = "H\x03"
+    else: #includes 'below'
+      new_home = "M%d,%d\x03SO0\x03" % (int(0.5+bbox['lly']+end_paper_offset*20.), 0) #! axis swapped when using Cameo-system
+    #new_home += "FN0\x03TB50,0\x03"
     s.write(new_home)
 
     return {
         'bbox': bbox,
         'unit' : 1/20.,
-        'trailer': trailer
+        'trailer': new_home
       }
 
 

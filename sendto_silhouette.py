@@ -312,6 +312,9 @@ class SendtoSilhouette(inkex.Effect):
           type = 'float', dest = 'regoriginx', default = 15.0, help="X mark origin from left [mm]")
     self.OptionParser.add_option('--rego-y', '--regoriginy', action = 'store',
           type = 'float', dest = 'regoriginy', default = 20.0, help="X mark origin from top [mm]")
+    self.OptionParser.add_option('-e', '--endposition', '--end-postition',
+          '--end_position', action = 'store', choices=('start','below'),
+          dest = 'endposition', default = 'below', help="Position of head after cutting: start or below")
 
   def version(self):
     return __version__
@@ -1025,6 +1028,7 @@ class SendtoSilhouette(inkex.Effect):
         mediaheight=px2mm(self.docHeight),
         margintop=0, marginleft=0,
         bboxonly=None,         # only return the bbox, do not draw it.
+        endposition='start',
         regmark=self.options.regmark,regsearch=self.options.regsearch,
         regwidth=self.options.regwidth,reglength=self.options.reglength,
         regoriginx=self.options.regoriginx,regoriginy=self.options.regoriginy)
@@ -1040,7 +1044,7 @@ class SendtoSilhouette(inkex.Effect):
       mediawidth=px2mm(self.docWidth),
       mediaheight=px2mm(self.docHeight),
       offset=(self.options.x_off,self.options.y_off),
-      bboxonly=self.options.bboxonly,
+      bboxonly=self.options.bboxonly, endposition=self.options.endposition,
       regmark=self.options.regmark,regsearch=self.options.regsearch,
       regwidth=self.options.regwidth,reglength=self.options.reglength,
       regoriginx=self.options.regoriginx,regoriginy=self.options.regoriginy)
