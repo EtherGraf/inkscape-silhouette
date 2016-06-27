@@ -3,7 +3,7 @@ def dist_sq(a,b):
   dy = a[1]-b[1]
   return dx*dx+dy*dy
 
-def findnearestpath(paths, pos):
+def findnearestpath(paths, pos, entrycircular=False):
     #print ("findnearest " ,pos,paths)
     nearestindex=0
     nearestdist=float("inf")
@@ -18,7 +18,7 @@ def findnearestpath(paths, pos):
             nearestdist = distance
             nearestindex = index
             selected = path[::-1]
-        if (path[0] == path[-1]):        # if circular path, not sure, if this saves real much time
+        if (entrycircular & (path[0] == path[-1])):  # break up circular path. Not sure, if this saves real much time
            for i,p in enumerate(path):   # test each point in closed path
                  distance = dist_sq(pos,p)
                  if (nearestdist > distance):
