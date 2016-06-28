@@ -985,7 +985,8 @@ class SendtoSilhouette(inkex.Effect):
           mm_path.append((px2mm(pt[0]), px2mm(pt[1])))
         pointcount += 1
 
-      multipath = mm_path
+      multipath = []
+      multipath.extend(mm_path)
       for i in range(1,self.options.multipass):
         # if reverse continue path without lifting, instead turn with rotating knife
         if (self.options.reversetoggle):
@@ -996,10 +997,9 @@ class SendtoSilhouette(inkex.Effect):
           multipath.extend(mm_path[1:])
         # else start a new path
         else: 
-          cut.append(multipath)
-          multipath = []
-
+          cut.append(mm_path)
       cut.append(multipath)
+
     if dev.dev is None:
       docname=None
       svg = self.document.getroot()
