@@ -95,7 +95,7 @@ if sys_platform.startswith('win'):
   sys.path.append('C:\Program Files\Inkscape\share\extensions')
 
 elif sys_platform.startswith('darwin'):
-  sys.path.append('/Applications/Inkscape.app/Contents/Resources/extensions')
+  sys.path.append('~/.config/inkscape/extensions')
 
 else:   # linux
   # if sys_platform.startswith('linux'):
@@ -304,7 +304,7 @@ class SendtoSilhouette(inkex.Effect):
           help="The document has registration marks.")
     self.OptionParser.add_option('--regsearch',
           action = 'store', dest = 'regsearch', type = 'inkbool', default = False,
-          help="Search for the regitration marks.")
+          help="Search for the registration marks.")
     self.OptionParser.add_option('-X', '--reg-x', '--regwidth', action = 'store',
           type = 'float', dest = 'regwidth', default = 180.0, help="X mark distance [mm]")
     self.OptionParser.add_option('-Y', '--reg-y', '--reglength', action = 'store',
