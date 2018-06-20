@@ -987,6 +987,11 @@ class SendtoSilhouette(inkex.Effect):
 
     # Viewbox handling
     self.handleViewBox()
+
+    # scale all points to unit mm
+    scale = px2mm(1.0)
+    self.docTransform = composeTransform(self.docTransform, [[scale, 0.0, 0.0], [0.0, scale, 0.0]])
+
     # Build a list of the vertices for the document's graphical elements
     if self.options.ids:
       # Traverse the selected objects
@@ -1000,13 +1005,8 @@ class SendtoSilhouette(inkex.Effect):
     if self.options.tool == 'pen': self.pen=True
     if self.options.tool == 'cut': self.pen=False
 
-    # scale all points to unit mm
-    for path in self.paths:
-      for i,pt in enumerate(path):
-        path[i] = (px2mm(pt[0]), px2mm(pt[1]))
-
     if self.options.strategy == 'matfree':
-      mf = MatFree('default', scale=1.0, pen=self.pen)
+      mf = MatFree('default', pen=self.pen)
       mf.verbose = 0    # inkscape crashes whenever something appears in stdout.
       self.paths = mf.apply(self.paths)
     elif self.options.strategy == 'mintravel':
